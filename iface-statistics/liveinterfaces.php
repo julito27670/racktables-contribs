@@ -138,7 +138,7 @@ function ios12ReadInterfaces ($input)
 		switch ($state)
 		{
 			case 'start':
-				if ( preg_match ('/^[a-zA-Z0-9-_]*#show interfaces$/', $line) )
+				if ( preg_match ('/^.*>show interfaces$/', $line) )
 				{
 					$state = 'intSearch';
 				}	
