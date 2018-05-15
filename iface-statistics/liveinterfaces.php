@@ -87,17 +87,16 @@ function renderInterfacesStats($object_id)
 
 			echo "<table width='80%' class='widetable' cellspacing=0 cellpadding='5px' align='center'><tr><th>Port<th>Link status<th>Last input<th>Last clear<th>Input packets<th>Output packets<th>Description</tr>";
 			$order = 'even';
-			foreach ($interfaces as $pn => $int)
-			{
+			foreach ($interfaces as $pn => $int){        
 				echo "<tr class='row_$order'>";
 				$order = $nextorder[$order];
 				echo '<td>' . $pn . '<td';
 				echo $int['status']=="connected"?" class='text_green'>":">";
 				echo $int['status'] . '<td';
-				echo time_convert($int['last']) > $port_use_age?" class='text_yellow'>":">";
-				echo $int['last'] . '<td';
-				echo (time_convert($int['clear']) > 0) ? ((time_convert($int['clear']) < $port_use_age) ? " class='text_red'>":">"):">";
-				echo $int['clear'];
+				echo $int['in_errors'] > 0 ? " class='text_yellow'>":">";
+				echo $int['in_errors'] . '<td';
+				echo $int['out_errors'] > 0 ? " class='text_red'>":">";
+				echo $int['out_errors'];
 				echo '<td>' . $int['in_pkts'];
 				echo '<td>' . $int['out_pkts'];
 				echo '<td>' . $int['desc'];
@@ -200,16 +199,30 @@ function ios12ReadInterfaces ($input)
 				{
 					$result[$portname]['in_pkts']=$matches[1];
 					//next search: output packets
-					$state = 'pktOutputSearch';
+					$state = 'pktInputErrorSearch';
 				}
 				break;
-			case 'pktOutputSearch':
-				if ( preg_match ('/   ([0-9]*) packets output/i', $line, $matches))
-				{
-					$result[$portname]['out_pkts']=$matches[1];
-					//next search: next interface
-					$state = 'intSearch';
-				}
+			case 'pktInputErrorSearch':                                
+				if ( preg_match ('/   ([0-9]*) input errors/i', $line, $matches))
+                                {                                        
+					$result[$portname]['in_errors']=$matches[1];                                        
+					$state= 'pktOutputSearch';                                
+				}                                
+				break;                        
+			case 'pktOutputSearch':                                
+				if ( preg_match ('/   ([0-9]*) packets output/i', $line, $matches))                                
+				{                                        
+					$result[$portname]['out_pkts']=$matches[1];                                        
+					//next search: next interface                                        
+					$state = 'pktOutputErrorSearch';                                
+				}                                
+				break;                        
+			case 'pktOutputErrorSearch':                                
+				if ( preg_match ('/   ([0-9]*) output errors/i', $line, $matches))                                
+				{                                        
+					$result[$portname]['out_errors']=$matches[1];                                        
+					$state = 'intSearch';                                
+				}                                
 				break;
 		}
 	}
